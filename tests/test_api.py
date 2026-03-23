@@ -1,12 +1,27 @@
 import pytest
+import joblib
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi.testclient import TestClient
-from api.main import app
+from api.main import app, MODEL_STORE, MODEL_METRICS
 
-client = TestClient(app)
+# Pre-chargement des modeles pour les tests (simule le lifespan)
+@pytest.fixture(autouse=True)
+def load_models_for_tests():
+    models_dir = Path("outputs/models/")
+    for name in ["LinearRegression", "RandomForest", "GradientBoosting", "XGBoost"]:
+        path = models_dir / f"{name}.joblib"
+        if path.exists():
+            MODEL_STORE[name] = joblib.load(path)
+    mlp_path = models_dir / "MLP_bundle.joblib"
+    if mlp_path.exists():
+        MODEL_STORE["MLP"] = joblib.load(mlp_path)
+    yield
+    MODEL_STORE.clear()
+
+client = TestClient(app, raise_server_exceptions=False)
 
 def test_health():
     resp = client.get("/health")
@@ -38,21 +53,15 @@ def test_predict_valid():
 
 def test_predict_invalid_influencer():
     resp = client.post("/predict", json={
-        "tv": 50.0,
-        "radio": 15.0,
-        "social_media": 3.0,
-        "influencer": "Invalid",
-        "model_name": "GradientBoosting"
+        "tv": 50.0, "radio": 15.0, "social_media": 3.0,
+        "influencer": "Invalid", "model_name": "GradientBoosting"
     })
     assert resp.status_code == 422
 
 def test_predict_negative_budget():
     resp = client.post("/predict", json={
-        "tv": -10.0,
-        "radio": 15.0,
-        "social_media": 3.0,
-        "influencer": "Mega",
-        "model_name": "GradientBoosting"
+        "tv": -10.0, "radio": 15.0, "social_media": 3.0,
+        "influencer": "Mega", "model_name": "GradientBoosting"
     })
     assert resp.status_code == 422
 

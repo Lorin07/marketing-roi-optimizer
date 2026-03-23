@@ -38,7 +38,7 @@ def test_create_features(sample_df):
     assert "tv_share" in df_feat.columns
     assert "tv_social_interaction" in df_feat.columns
     # Verification que total_budget = somme des 3 canaux
-    expected = df_clean["TV"] + df_clean["Radio"] + df_clean["Social Media"]
+    expected = (df_clean["TV"] + df_clean["Radio"] + df_clean["Social Media"]).rename("total_budget")
     pd.testing.assert_series_equal(df_feat["total_budget"].reset_index(drop=True),
                                    expected.reset_index(drop=True))
 
