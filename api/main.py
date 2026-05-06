@@ -119,7 +119,18 @@ class PredictResponse(BaseModel):
     roi_estimate: float
 
 # Endpoints
-@app.get("/health", tags=["Monitoring"])
+@app.get("/", tags=["Info"])
+def root():
+    return {
+        "project": "Marketing ROI Optimizer",
+        "version": "0.1.0",
+        "docs": "http://localhost:8000/docs",
+        "health": "http://localhost:8000/health",
+        "predict": "http://localhost:8000/predict",
+    }
+
+
+@app.get("/health", tags=["Info"])
 def health_check():
     # Verifie que l'API est operationnelle et les modeles charges
     return {
